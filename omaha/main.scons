@@ -913,8 +913,11 @@ windows_coverage_env['SIGNTOOL_ORIG'] = windows_coverage_env['SIGNTOOL']
 windows_coverage_env['SIGNTOOL'] = '@echo Signing deferred: '
 
 def SigningCommand(env, filename):
-  # Only do signing if there is a certificate file or certificate name.
-  if env.subst('$CERTIFICATE_PATH') or env.subst('$CERTIFICATE_NAME'):
+      # Only do signing if there is a certificate file or certificate name.
+    if not env.subst('$CERTIFICATE_PATH') and not env.subst(
+        '$CERTIFICATE_NAME'
+    ):
+        return 'echo no signing needed'
     # The command used to do signing (target added on below).
     signing_cmd = '$SIGNTOOL_ORIG sign '
     # Add in certificate file if any.
@@ -931,24 +934,21 @@ def SigningCommand(env, filename):
     if env.subst('$TIMESTAMP_SERVER'):
       signing_cmd += ' /t "$TIMESTAMP_SERVER"'
     # Add in target name
-    signing_cmd += ' "%s"' % filename
+    signing_cmd += f' "{filename}"'
     return signing_cmd
-  else:
-    return 'echo no signing needed'
 
 def _IsInstrumentableFileType(file):
-  if (file.endswith('.exe') or
-      file.endswith('.dll')):
-    return True
-  return False
+    return bool((file.endswith('.exe') or file.endswith('.dll')))
 
 def _IsSignableFileType(file):
-  if (file.endswith('.exe') or
-      file.endswith('.dll') or
-      file.endswith('.msi') or
-      file.endswith('.msp')):
-    return True
-  return False
+    return bool(
+        (
+            file.endswith('.exe')
+            or file.endswith('.dll')
+            or file.endswith('.msi')
+            or file.endswith('.msp')
+        )
+    )
 
 # Sign files during the install stage, since instrumentation invalidates the
 # signature. Signing within the individual build files was disabled above.
@@ -957,20 +957,22 @@ def _IsSignableFileType(file):
 # does the instrumentation. This also seems to be required to avoid
 # unnecessarily rebuilding non-instrumentable files.
 def _PostCoverageSigningInstall(dest, source, env):
-  if _IsInstrumentableFileType(dest) or not _IsSignableFileType(dest):
-    # Install the file to staging. Includes instrumentation if appropriate.
-    env['PRECOVERAGE_SIGN_INSTALL'](dest, source, env)
-  else:
-    # For signable but not instrumentable files, copy the files rather than
-    # using PRECOVERAGE_SIGN_INSTALL as this works around unnecessary rebuilds
-    # caused by http://code.google.com/p/swtoolkit/issues/detail?id=13.
-    env.Execute('copy "%s" "%s"' % (source, dest))
+    if _IsInstrumentableFileType(dest) or not _IsSignableFileType(dest):
+        # Install the file to staging. Includes instrumentation if appropriate.
+        env['PRECOVERAGE_SIGN_INSTALL'](dest, source, env)
+    else:
+            # For signable but not instrumentable files, copy the files rather than
+            # using PRECOVERAGE_SIGN_INSTALL as this works around unnecessary rebuilds
+            # caused by http://code.google.com/p/swtoolkit/issues/detail?id=13.
+        env.Execute(f'copy "{source}" "{dest}"')
 
-  if (_IsSignableFileType(dest) and
-      (-1 == dest.find('_unsigned')) and
-      (-1 == dest.find('_unittest')) and
-      os.path.split(os.path.split(dest)[0])[1] == 'staging'):
-    env.Execute(SigningCommand(env, dest))
+    if (
+        _IsSignableFileType(dest)
+        and dest.find('_unsigned') == -1
+        and dest.find('_unittest') == -1
+        and os.path.split(os.path.split(dest)[0])[1] == 'staging'
+    ):
+        env.Execute(SigningCommand(env, dest))
 
 windows_coverage_env['PRECOVERAGE_SIGN_INSTALL'] = (
     windows_coverage_env['INSTALL'])

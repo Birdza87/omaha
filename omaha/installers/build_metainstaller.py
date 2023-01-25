@@ -75,23 +75,24 @@ def BuildMetaInstaller(
   """
 
   # Payload .tar.lzma
-  tarball_filename = '%spayload%s.tar' % (prefix, suffix)
-  payload_filename = tarball_filename + '.lzma'
+  tarball_filename = f'{prefix}payload{suffix}.tar'
+  payload_filename = f'{tarball_filename}.lzma'
 
   # Collect a list of all the files to include in the payload
   payload_file_names = omaha_version_info.GetMetainstallerPayloadFilenames()
 
-  payload_contents = [omaha_files_path + '/' + file_name
-                      for file_name in payload_file_names]
+  payload_contents = [
+      f'{omaha_files_path}/{file_name}' for file_name in payload_file_names
+  ]
   if additional_payload_contents:
     payload_contents += additional_payload_contents
 
   # Create the tarball
   tarball_output = env.Command(
-      target=tarball_filename,    # Archive filename
-      source=payload_contents,    # List of files to include in tarball
-      action='python.exe "%s" -o $TARGET $SOURCES' % (
-          env.File(installers_sources_path + '/generate_tarball.py').abspath),
+      target=tarball_filename,
+      source=payload_contents,
+      action=
+      f"""python.exe "{env.File(f'{installers_sources_path}/generate_tarball.py').abspath}" -o $TARGET $SOURCES""",
   )
 
   # Add potentially hidden dependencies
@@ -99,12 +100,12 @@ def BuildMetaInstaller(
     env.Depends(tarball_output, additional_payload_contents_dependencies)
 
   # Preprocess the tarball to increase compressibility
-  bcj_filename = '%spayload%s.tar.bcj' % (prefix, suffix)
+  bcj_filename = f'{prefix}payload{suffix}.tar.bcj'
   # TODO(omaha): Add the bcj2 path as an optional parameter.
   bcj_output = env.Command(
       target=bcj_filename,
       source=tarball_output,
-      action='"%s" "$SOURCES" "$TARGET"' % bcj2_path,
+      action=f'"{bcj2_path}" "$SOURCES" "$TARGET"',
   )
   env.Depends(bcj_output, bcj2_path)
 
@@ -116,22 +117,23 @@ def BuildMetaInstaller(
   lzma_output = lzma_env.Command(
       target=payload_filename,
       source=bcj_output,
-      action='"%s" e $SOURCES $TARGET $LZMAFLAGS' % lzma_path,
+      action=f'"{lzma_path}" e $SOURCES $TARGET $LZMAFLAGS',
   )
 
   # Construct the resource generation script
-  manifest_path = installers_sources_path + '/installers.manifest'
-  res_command = 'python.exe "%s" -i "%s" -o $TARGET -p $SOURCES -m "%s" -r "%s"' % (
-      env.File(installers_sources_path + '/generate_resource_script.py'
-              ).abspath,
-      env.File(installers_sources_path + '/resource.rc.in').abspath,
-      env.File(manifest_path).abspath,
-      env.File(installers_sources_path + '/resource.h').abspath
-      )
+  manifest_path = f'{installers_sources_path}/installers.manifest'
+  res_command = (
+      'python.exe "%s" -i "%s" -o $TARGET -p $SOURCES -m "%s" -r "%s"' % (
+          env.File(f'{installers_sources_path}/generate_resource_script.py').
+          abspath,
+          env.File(f'{installers_sources_path}/resource.rc.in').abspath,
+          env.File(manifest_path).abspath,
+          env.File(f'{installers_sources_path}/resource.h').abspath,
+      ))
 
   # Generate the .rc file
   rc_output = env.Command(
-      target='%sresource%s.rc' % (prefix, suffix),
+      target=f'{prefix}resource{suffix}.rc',
       source=lzma_output,
       action=res_command,
   )
@@ -148,15 +150,10 @@ def BuildMetaInstaller(
   dll_env = env.Clone(COMPONENT_STATIC=False)
   dll_env['LINKFLAGS'] += ['/noentry']
 
-  dll_inputs = [
-      installers_sources_path + '/resource_only_dll.def',
-      res_file
-      ]
+  dll_inputs = [f'{installers_sources_path}/resource_only_dll.def', res_file]
 
   dll_output = dll_env.ComponentLibrary(
-      lib_name='%spayload%s' % (prefix, suffix),
-      source=dll_inputs,
-  )
+      lib_name=f'{prefix}payload{suffix}', source=dll_inputs)
 
   # Get only the dll itself from the output (ie. ignore .pdb, etc.)
   dll_output_name = [f for f in dll_output if f.suffix == '.dll']
@@ -164,9 +161,10 @@ def BuildMetaInstaller(
   # Build the target setup executable by merging the empty metafile
   # with the resource DLL built above.
   merged_output = env.Command(
-      target='unsigned_' + target_name,
+      target=f'unsigned_{target_name}',
       source=[empty_metainstaller_path, dll_output_name],
-      action='"%s" --copyappend $SOURCES $TARGET' % resmerge_path)
+      action=f'"{resmerge_path}" --copyappend $SOURCES $TARGET',
+  )
 
   authenticode_signed_target_prefix = 'authenticode_'
   authenticode_signed_exe = env.DualSignedBinary(

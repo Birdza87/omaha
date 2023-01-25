@@ -29,17 +29,14 @@ def BuildCOMForwarder(cmd_line_switch,
   com_forwarder_env.FilterOut(CCFLAGS=['/GL', '/RTC1',])
   com_forwarder_env.FilterOut(LINKFLAGS=['/LTCG'])
 
-  should_append_string = 'FALSE'
-  if should_append_cmd_line:
-    should_append_string = 'TRUE'
-
+  should_append_string = 'TRUE' if should_append_cmd_line else 'FALSE'
   com_forwarder_env.Append(
       CCFLAGS=[
           '/Zl',
       ],
-      CPPDEFINES = [
+      CPPDEFINES=[
           'CMD_LINE_SWITCH=_T(\\"%s\\")' % cmd_line_switch,
-          'SHOULD_APPEND_CMD_LINE=%s' % should_append_string,
+          f'SHOULD_APPEND_CMD_LINE={should_append_string}',
       ],
       LINKFLAGS=[
           '/ENTRY:wWinMainCRTStartup',
@@ -51,25 +48,21 @@ def BuildCOMForwarder(cmd_line_switch,
   )
   # The resource file used is the same as the one for GoogleUpdate.exe.
   # The version resource used is the same as the one for goopdate.dll.
-  com_forwarder_res = com_forwarder_env.RES('%s.res' % signed_exe_name,
+  com_forwarder_res = com_forwarder_env.RES(f'{signed_exe_name}.res',
                                             '../google_update/resource.rc')
   com_forwarder_env.Depends(com_forwarder_res,
                             '../google_update/GoogleUpdate.manifest')
   com_forwarder_inputs = [
-       com_forwarder_env.ComponentObject('%s.obj' % signed_exe_name,
-                                         'com_forwarder.cc'),
-       com_forwarder_res,
-       '$OBJ_ROOT/goopdate/goopdate_version.res',
+      com_forwarder_env.ComponentObject(f'{signed_exe_name}.obj',
+                                        'com_forwarder.cc'),
+      com_forwarder_res,
+      '$OBJ_ROOT/goopdate/goopdate_version.res',
   ]
 
   unsigned_broker = com_forwarder_env.ComponentProgram(
-      prog_name='%s_unsigned' % signed_exe_name,
-      source=com_forwarder_inputs,
-  )
+      prog_name=f'{signed_exe_name}_unsigned', source=com_forwarder_inputs)
   signed_broker = com_forwarder_env.DualSignedBinary(
-      target='%s.exe' % signed_exe_name,
-      source=unsigned_broker,
-  )
+      target=f'{signed_exe_name}.exe', source=unsigned_broker)
   env.Replicate('$STAGING_DIR', signed_broker)
 
 
@@ -174,14 +167,9 @@ def BuildGoogleUpdateCOMProxy(midl_env, generated_idl):
          midl_env.Replicate('$STAGING_DIR/idls', node)
 
   # Generate the interface library as an object file.
-  midl_lib_inputs = [
-      'omaha3_idl%s_i.c' % suffix,
-      ]
+  midl_lib_inputs = [f'omaha3_idl{suffix}_i.c']
 
-  midl_env.ComponentLibrary(
-      'omaha3_idl%s' % suffix,
-      midl_lib_inputs,
-  )
+  midl_env.ComponentLibrary(f'omaha3_idl{suffix}', midl_lib_inputs)
 
 generated_omaha3_idl = GenerateOmaha3IDLFile()
 BuildGoogleUpdateCOMProxy(env.Clone(), generated_omaha3_idl)
@@ -230,7 +218,7 @@ def BuildGoogleUpdateHandlerDll(handler_env,
   prefix = omaha_version_info.filename_prefix
 
   if prefix:
-    handler_env['OBJPREFIX'] = handler_env.subst(prefix + 'obj/$OBJPREFIX')
+    handler_env['OBJPREFIX'] = handler_env.subst(f'{prefix}obj/$OBJPREFIX')
 
   handler_env.Append(
       CPPDEFINES = [
@@ -253,34 +241,33 @@ def BuildGoogleUpdateHandlerDll(handler_env,
 
   suffix = ('', '_64')[handler_env.Bit('x64')]
   resource = handler_env.RES(
-      target='%s%s_resource%s.res' % (prefix, psname, suffix),
-      source='google_update_ps_resource.rc')
+      target=f'{prefix}{psname}_resource{suffix}.res',
+      source='google_update_ps_resource.rc',
+  )
 
   handler_env.Depends(
       resource,
       ['$MAIN_DIR/VERSION',
        '$MAIN_DIR/base/generic_reg_file_dll_handler.rgs'])
 
-  target_name = '%s%s_unsigned%s' % (prefix, psname, suffix)
+  target_name = f'{prefix}{psname}_unsigned{suffix}'
 
-  inputs = [
-      'google_update_ps.def',
-      resource,
-      prefix + 'goopdate_version.res',
-      ]
-  inputs += handler_env.Object('google_update_ps_%s%s.obj' % (psname, suffix),
-                               '$OBJ_ROOT/goopdate/google_update_ps.cc')
-  inputs += handler_env.Object('omaha3_idl_datax_%s%s.obj' % (psname, suffix),
-                               '$OBJ_ROOT/goopdate/omaha3_idl_datax.c')
+  inputs = ['google_update_ps.def', resource, f'{prefix}goopdate_version.res']
+  inputs += handler_env.Object(
+      f'google_update_ps_{psname}{suffix}.obj',
+      '$OBJ_ROOT/goopdate/google_update_ps.cc',
+  )
+  inputs += handler_env.Object(
+      f'omaha3_idl_datax_{psname}{suffix}.obj',
+      '$OBJ_ROOT/goopdate/omaha3_idl_datax.c',
+  )
   unsigned_dll = handler_env.ComponentLibrary(
       lib_name=target_name,
       source=inputs,
   )
 
   signed_dll = handler_env.DualSignedBinary(
-      target='%s%s%s.dll' % (prefix, psname, suffix),
-      source=unsigned_dll,
-  )
+      target=f'{prefix}{psname}{suffix}.dll', source=unsigned_dll)
 
   env.Replicate('$STAGING_DIR', signed_dll)
   env.Replicate('$STAGING_DIR', [f for f in unsigned_dll if f.suffix == '.pdb'])
@@ -443,7 +430,7 @@ for omaha_version_info in env['omaha_versions_info']:
 
   prefix = omaha_version_info.filename_prefix
   if prefix:
-    temp_env['OBJPREFIX'] = temp_env.subst(prefix + 'obj/$OBJPREFIX')
+    temp_env['OBJPREFIX'] = temp_env.subst(f'{prefix}obj/$OBJPREFIX')
 
   # Add languages that have version resources but are not fully supported.
   translated_languages = omaha_version_utils.GetShellLanguagesForVersion(
@@ -526,22 +513,18 @@ for omaha_version_info in env['omaha_versions_info']:
     )
 
   resource_res = temp_env.RES(
-      target=prefix + 'goopdate.res',
-      source='goopdate.rc',
-  )
+      target=f'{prefix}goopdate.res', source='goopdate.rc')
 
   # Force a rebuild when the .tlb changes.
   temp_env.Depends(resource_res, '$OBJ_ROOT/goopdate/omaha3_idl.tlb')
 
   version_res = temp_env.RES(
-      target=prefix + 'goopdate_version.res',
-      source='goopdate_version.rc'
-  )
+      target=f'{prefix}goopdate_version.res', source='goopdate_version.rc')
 
   # Force a rebuild when the version changes.
   env.Depends(version_res, '$MAIN_DIR/VERSION')
 
-  target_name = prefix + 'goopdate_unsigned'
+  target_name = f'{prefix}goopdate_unsigned'
 
   # main.cc is included here because the linker gets confused if we try to
   # create a DLL without an entry point. There's probably a more accurate
@@ -554,10 +537,10 @@ for omaha_version_info in env['omaha_versions_info']:
       ]
 
   for language in translated_languages:
-    lang_base_name = 'goopdate_dll/generated_resources_' + language
+    lang_base_name = f'goopdate_dll/generated_resources_{language}'
     inputs += temp_env.RES(
-        target='resources/%s.res' % (prefix + lang_base_name),
-        source='resources/%s.rc' % lang_base_name,
+        target=f'resources/{prefix + lang_base_name}.res',
+        source=f'resources/{lang_base_name}.rc',
     )
 
   unsigned_dll = temp_env.ComponentLibrary(
@@ -566,9 +549,7 @@ for omaha_version_info in env['omaha_versions_info']:
   )
 
   signed_dll = temp_env.DualSignedBinary(
-      target=prefix + 'goopdate.dll',
-      source=unsigned_dll,
-  )
+      target=f'{prefix}goopdate.dll', source=unsigned_dll)
 
   env.Replicate('$STAGING_DIR', signed_dll)
   env.Replicate('$STAGING_DIR', [f for f in unsigned_dll if f.suffix == '.pdb'])

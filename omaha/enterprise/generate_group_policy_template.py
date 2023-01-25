@@ -20,6 +20,7 @@ The resulting strings and files use CRLF as required by gpedit.msc.
 To unit test this module, just run the file from the command line.
 """
 
+
 from __future__ import print_function
 
 import codecs
@@ -311,12 +312,12 @@ APPLICATIONS_FOOTER = """
 
 # Policy names that are used in multiple locations.
 ALLOW_INSTALLATION_POLICY = 'Allow installation'
-DEFAULT_ALLOW_INSTALLATION_POLICY = ALLOW_INSTALLATION_POLICY + ' default'
+DEFAULT_ALLOW_INSTALLATION_POLICY = f'{ALLOW_INSTALLATION_POLICY} default'
 UPDATE_POLICY = 'Update policy override'
 TARGET_CHANNEL_POLICY = 'Target Channel override'
 TARGET_VERSION_POLICY = 'Target version prefix override'
 ROLLBACK_VERSION_POLICY = 'Rollback to Target version'
-DEFAULT_UPDATE_POLICY = UPDATE_POLICY + ' default'
+DEFAULT_UPDATE_POLICY = f'{UPDATE_POLICY} default'
 
 # Update policy options that are used in multiple locations.
 UPDATES_ENABLED = 'Always allow updates'
@@ -412,8 +413,12 @@ This policy is available only on Windows instances that are joined to a Microsof
 STRINGS_UPDATE_POLICY_OPTIONS = """\
     \\n\\nOptions:\\
     \\n - """ + UPDATES_ENABLED + """: Updates are always applied when found, either by periodic update check or by a manual update check.\\
+    \\n - """ + UPDATES_ENABLED + """: Updates are always applied when found, either by periodic update check or by a manual update check.\\
+    \\n - """ + MANUAL_UPDATES_ONLY + """: Updates are only applied when the user does a manual update check. (Not all apps provide an interface for this.)\\
     \\n - """ + MANUAL_UPDATES_ONLY + """: Updates are only applied when the user does a manual update check. (Not all apps provide an interface for this.)\\
     \\n - """ + AUTOMATIC_UPDATES_ONLY + """: Updates are only applied when they are found via the periodic update check.\\
+    \\n - """ + AUTOMATIC_UPDATES_ONLY + """: Updates are only applied when they are found via the periodic update check.\\
+    \\n - """ + UPDATES_DISABLED + """: Never apply updates.\\
     \\n - """ + UPDATES_DISABLED + """: Never apply updates.\\
     \\n\\nIf you select manual updates, you should periodically check for updates using $PreApplicationWord$ application's manual update mechanism if available. If you disable updates, you should periodically check for updates and distribute them to users."""
 
@@ -445,6 +450,7 @@ Explain_Applications=Policies for individual applications.\\
 
 Explain_DefaultAllowInstallation=Specifies the default behavior for whether Google software can be installed using Google Update/Google Installer.\\
     \\n\\nCan be overridden by the \"""" + ALLOW_INSTALLATION_POLICY + """\" for individual applications.\\
+    \\n\\nCan be overridden by the \"""" + ALLOW_INSTALLATION_POLICY + """\" for individual applications.\\
     \\n\\nOnly affects installation of Google software using Google Update/Google Installer. Cannot prevent running the application installer directly or installation of Google software that does not use Google Update/Google Installer for installation.\\
     \\n\\n%(domain_requirement)s
 
@@ -473,9 +479,11 @@ STRINGS_APP_POLICY_EXPLANATIONS_TEMPLATE = ("""
 ; $AppName$
 Explain_Install$AppLegalId$=Specifies whether $AppName$ can be installed using Google Update/Google Installer.\\
     \\n\\nIf this policy is not configured, $AppName$ can be installed as specified by \"""" + DEFAULT_ALLOW_INSTALLATION_POLICY + """\".\\
+    \\n\\nIf this policy is not configured, $AppName$ can be installed as specified by \"""" + DEFAULT_ALLOW_INSTALLATION_POLICY + """\".\\
     \\n\\n$ForceInstallsExplain$%(domain_requirement)s
 
 Explain_AutoUpdate$AppLegalId$=Specifies how Google Update handles available $AppName$ updates from Google.\\
+    \\n\\nIf this policy is not configured, Google Update handles available updates as specified by \"""" % {"domain_requirement": ADM_DOMAIN_REQUIREMENT_EN} + DEFAULT_UPDATE_POLICY + """\".\\
     \\n\\nIf this policy is not configured, Google Update handles available updates as specified by \"""" % {"domain_requirement": ADM_DOMAIN_REQUIREMENT_EN} + DEFAULT_UPDATE_POLICY + """\".\\
 """ +
 STRINGS_UPDATE_POLICY_OPTIONS.replace('$PreApplicationWord$', 'the') + '$AppUpdateExplainExtra$') + """\\
@@ -500,6 +508,7 @@ Explain_TargetVersionPrefix$AppLegalId$=Specifies which version $AppName$ should
     \\n\\n%(domain_requirement)s
 
 Explain_RollbackToTargetVersion$AppLegalId$=Specifies that Google Update should roll installations of $AppName$ back if the client has a higher version than that available.\\
+    \\n\\nIf this policy is not configured or is disabled, installs that have a version higher than that available will be left as-is. This could be the case if \"""" % {"domain_requirement": ADM_DOMAIN_REQUIREMENT_EN} + TARGET_CHANNEL_POLICY + """\" is set to a Channel with a lower version, if \"""" + TARGET_VERSION_POLICY + """\" matches a lower version on the Channel, or if a user had installed a higher version.\\
     \\n\\nIf this policy is not configured or is disabled, installs that have a version higher than that available will be left as-is. This could be the case if \"""" % {"domain_requirement": ADM_DOMAIN_REQUIREMENT_EN} + TARGET_CHANNEL_POLICY + """\" is set to a Channel with a lower version, if \"""" + TARGET_VERSION_POLICY + """\" matches a lower version on the Channel, or if a user had installed a higher version.\\
     \\n\\nIf this policy is enabled, installs that have a version higher than that available will be downgraded to the highest available version, respecting any configured target Channel and target version.\\
     \\n\\n$AppRollbackDisclaimer$\\

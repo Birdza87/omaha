@@ -99,8 +99,7 @@ def BuildOutputDirectory(output_dir, lang, app):
   app_dirname = installers_txt_filename[:end_idx]
 
   app_path = os.path.join(output_dir, app_dirname)
-  lang_path = os.path.join(app_path, lang)
-  return lang_path
+  return os.path.join(app_path, lang)
 
 
 def SetOutputFileNames(file_name, apps, output_dir):
@@ -137,11 +136,9 @@ def GetOutputFileName(file, name, lang):
   Returns:
     The output filename
   """
-  if file.startswith(('TEST_', 'TEST2_')):
-    file_name = 'Tagged_%s_%sSetup_%s.exe' % (file.split('_', 1)[0], name, lang)
-  else:
-    file_name = 'Tagged_%sSetup_%s.exe' % (name, lang)
-  return file_name
+  return (f"Tagged_{file.split('_', 1)[0]}_{name}Setup_{lang}.exe"
+          if file.startswith(('TEST_',
+                              'TEST2_')) else f'Tagged_{name}Setup_{lang}.exe')
 
 def BuildTagStringForBundle(bundle):
   """Builds the string to be tagged into the binary for a bundle.
@@ -158,17 +155,16 @@ def BuildTagStringForBundle(bundle):
     first_app = False
     (guid, name, ap) = app
     display_name = UrlEncodeString(name)
-    args += 'appguid=%s&appname=%s&needsadmin=%s' % (
-        guid, display_name, bundle.needs_admin)
+    args += f'appguid={guid}&appname={display_name}&needsadmin={bundle.needs_admin}'
     if ap:
-      args += '&ap=%s' % ap
+      args += f'&ap={ap}'
 
   if bundle.usage_stats:
-    args += '&usagestats=%s' % bundle.usage_stats
+    args += f'&usagestats={bundle.usage_stats}'
   if bundle.browser:
-    args += '&browser=%s' % bundle.browser
+    args += f'&browser={bundle.browser}'
   if bundle.lang:
-    args += '&lang=%s' % bundle.lang
+    args += f'&lang={bundle.lang}'
   args += '\"'
   return args
 

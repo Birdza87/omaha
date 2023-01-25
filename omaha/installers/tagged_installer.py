@@ -29,9 +29,10 @@ def TagOneBundle(env, bundle, untagged_binary_path, output_dir):
   relative_filepath = bundle.output_file_name[indx+len('installers')+1:]
 
   return env.OmahaTagExe(
-      target='%s/%s' % (output_dir, relative_filepath),
+      target=f'{output_dir}/{relative_filepath}',
       source=untagged_binary_path,
-      tag=tag_str)
+      tag=tag_str,
+  )
 
 
 def _ReadAllBundleInstallerFiles(installers_txt_files_path):
@@ -71,7 +72,7 @@ def CreateTaggedInstallers(env, installers_txt_files_path, product_name,
   """
   bundles = _ReadAllBundleInstallerFiles(installers_txt_files_path)
 
-  untagged_binary = '%s%sSetup.exe' % (prefix, product_name)
+  untagged_binary = f'{prefix}{product_name}Setup.exe'
 
   tag_meta_installers.SetOutputFileNames(untagged_binary, bundles, '')
   for bundles_lang in bundles.itervalues():
@@ -79,7 +80,7 @@ def CreateTaggedInstallers(env, installers_txt_files_path, product_name,
       TagOneBundle(
           env=env,
           bundle=bundle,
-          untagged_binary_path='$STAGING_DIR/%s' % (untagged_binary),
+          untagged_binary_path=f'$STAGING_DIR/{untagged_binary}',
           output_dir='$TARGET_ROOT/Tagged_Installers',
       )
 

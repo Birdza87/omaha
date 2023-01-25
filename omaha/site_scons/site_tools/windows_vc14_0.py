@@ -54,9 +54,8 @@ def _SetMsvcCompiler(
   vc_dir = os.environ.get('VSINSTALLDIR')
   platform_sdk_dir = os.environ.get('OMAHA_PLATFORM_SDK_DIR')
   platform_sdk_version = os.environ.get('WindowsSDKVersion')
-  platform_sdk_include_dir = platform_sdk_dir + 'include/' + \
-      platform_sdk_version
-  platform_sdk_lib_dir = platform_sdk_dir + 'lib/' + platform_sdk_version
+  platform_sdk_include_dir = f'{platform_sdk_dir}include/{platform_sdk_version}'
+  platform_sdk_lib_dir = f'{platform_sdk_dir}lib/{platform_sdk_version}'
 
   env['GOOGLECLIENT'] = '$MAIN_DIR/..'
   env['GOOGLE3'] = '$GOOGLECLIENT'
@@ -75,9 +74,8 @@ def _SetMsvcCompiler(
   env['ENV']['LIB'] = ''
 
   tools_paths = []
-  include_paths = []
   lib_paths = []
-  vc_bin_dir = vc_dir + '/vc/bin'
+  vc_bin_dir = f'{vc_dir}/vc/bin'
   if vc_flavor == 'amd64':
     vc_bin_dir += '/amd64'
   elif vc_flavor == 'x86_amd64':
@@ -85,29 +83,29 @@ def _SetMsvcCompiler(
 
   tools_paths += [vc_bin_dir,]
 
-  include_paths.append(vc_dir + '/vc/include')
+  include_paths = [f'{vc_dir}/vc/include']
   if vc_flavor == 'x86':
-    lib_paths.append(vc_dir + '/vc/lib')
+    lib_paths.append(f'{vc_dir}/vc/lib')
   else:
-    lib_paths.append(vc_dir + '/vc/lib/amd64')
+    lib_paths.append(f'{vc_dir}/vc/lib/amd64')
 
   # Add explicit location of platform SDK to tools path
-  tools_paths.append(platform_sdk_dir + '/bin')
+  tools_paths.append(f'{platform_sdk_dir}/bin')
   include_paths += [
-      platform_sdk_include_dir + 'um',      # Windows SDKs
-      platform_sdk_include_dir + 'shared',  # Windows SDKs
-      platform_sdk_include_dir + 'ucrt',    # Windows CRT
+      f'{platform_sdk_include_dir}um',
+      f'{platform_sdk_include_dir}shared',
+      f'{platform_sdk_include_dir}ucrt',
   ]
   if vc_flavor == 'x86':
     lib_paths += [
-        platform_sdk_lib_dir + 'um/x86',    # Windows SDK
-        platform_sdk_lib_dir + 'ucrt/x86',  # Windows CRT
+        f'{platform_sdk_lib_dir}um/x86',
+        f'{platform_sdk_lib_dir}ucrt/x86',
     ]
-    tools_paths.append(platform_sdk_dir + '/bin/x86')  # VC 12 only
+    tools_paths.append(f'{platform_sdk_dir}/bin/x86')
   else:
     lib_paths += [
-        platform_sdk_lib_dir + 'um/x64',    # Windows SDK
-        platform_sdk_lib_dir + 'ucrt/x64',  # Windows CRT
+        f'{platform_sdk_lib_dir}um/x64',
+        f'{platform_sdk_lib_dir}ucrt/x64',
     ]
 
   for p in tools_paths:

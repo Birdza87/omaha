@@ -69,28 +69,30 @@ def BuildGoogleUpdateFragment(env,
 
   product_name_legal_identifier = product_name.replace(' ', '')
 
-  intermediate_base_name = wixobj_base_name + '_google_update_fragment'
+  intermediate_base_name = f'{wixobj_base_name}_google_update_fragment'
 
   copy_target = env.Command(
-      target=intermediate_base_name + '.wxs',
+      target=f'{intermediate_base_name}.wxs',
       source=google_update_wxs_template_path,
       action='@copy /y $SOURCE $TARGET',
   )
 
   wix_defines = ei_utils.GetWixCandleFlags(
-      '"%s"' % product_name,
-      '"%s"' % product_name_legal_identifier,
+      f'"{product_name}"',
+      f'"{product_name_legal_identifier}"',
       msi_product_version,
       product_version,
-      '"%s"' % product_guid,
-      '"%s"' % company_name,
+      f'"{product_guid}"',
+      f'"{company_name}"',
       product_custom_params=product_custom_params,
-      metainstaller_path=str(env.File(metainstaller_path).abspath))
+      metainstaller_path=str(env.File(metainstaller_path).abspath),
+  )
 
   wixobj_output = env.Command(
-      target=intermediate_base_name + '.wixobj',
+      target=f'{intermediate_base_name}.wixobj',
       source=copy_target,
-      action='@candle.exe -nologo -out $TARGET $SOURCE ' + ' '.join(wix_defines)
+      action='@candle.exe -nologo -out $TARGET $SOURCE ' +
+      ' '.join(wix_defines),
   )
 
   # Force a rebuild of the .wixobj file when the metainstaller changes.
@@ -161,7 +163,7 @@ def _BuildMsiForExe(env,
   """
 
   product_name_legal_identifier = product_name.replace(' ', '')
-  msi_name = msi_base_name + '.msi'
+  msi_name = f'{msi_base_name}.msi'
 
   msi_product_version = ei_utils.ConvertToMSIVersionNumberIfNeeded(
       product_version)
@@ -172,17 +174,13 @@ def _BuildMsiForExe(env,
   # product code must be changed if... the name of the .msi file has been
   # changed" according to http://msdn.microsoft.com/en-us/library/aa367850.aspx.
   msi_product_id = ei_utils.GenerateNameBasedGUID(
-      omaha_installer_namespace,
-      'Product %s %s' % (product_name, msi_base_name)
-  )
+      omaha_installer_namespace, f'Product {product_name} {msi_base_name}')
   msi_upgradecode_guid = ei_utils.GenerateNameBasedGUID(
-      omaha_installer_namespace,
-      'Upgrade ' + product_name
-  )
+      omaha_installer_namespace, f'Upgrade {product_name}')
 
   copy_target = env.Command(
-      target=msi_base_name + '.wxs',
-      source=enterprise_installer_dir + '/enterprise_installer.wxs.xml',
+      target=f'{msi_base_name}.wxs',
+      source=f'{enterprise_installer_dir}/enterprise_installer.wxs.xml',
       action='@copy /y $SOURCE $TARGET',
   )
 
@@ -206,7 +204,7 @@ def _BuildMsiForExe(env,
   )
 
   wix_output = wix_env.WiX(
-      target='unsigned_' + msi_name,
+      target=f'unsigned_{msi_name}',
       source=[copy_target, google_update_wixobj_output],
   )
 
@@ -291,7 +289,8 @@ def BuildEnterpriseInstaller(env,
       product_guid,
       product_custom_params,
       msi_base_name,
-      enterprise_installer_dir + '/google_update_installer_fragment.wxs.xml')
+      f'{enterprise_installer_dir}/google_update_installer_fragment.wxs.xml',
+  )
 
   _BuildMsiForExe(
       env,
@@ -368,7 +367,7 @@ def BuildEnterpriseInstallerFromStandaloneInstaller(
     Nothing.
   """
   product_name_legal_identifier = product_name.replace(' ', '')
-  msi_name = msi_base_name + '.msi'
+  msi_name = f'{msi_base_name}.msi'
   msi_product_version = ei_utils.ConvertToMSIVersionNumberIfNeeded(
       product_version)
 
@@ -381,16 +380,14 @@ def BuildEnterpriseInstallerFromStandaloneInstaller(
   # upgrades.
   msi_product_id = ei_utils.GenerateNameBasedGUID(
       omaha_installer_namespace,
-      'Product %s %s %s' % (product_name, msi_base_name, product_version)
+      f'Product {product_name} {msi_base_name} {product_version}',
   )
   msi_upgradecode_guid = ei_utils.GenerateNameBasedGUID(
-      omaha_installer_namespace,
-      'Upgrade ' + product_name
-  )
+      omaha_installer_namespace, f'Upgrade {product_name}')
 
   # To allow for multiple versions of the same product to be generated,
   # stick output in a subdirectory.
-  output_directory_name = product_guid + '.' + product_version
+  output_directory_name = f'{product_guid}.{product_version}'
 
   copy_target = env.Command(
       target=output_directory_name + msi_base_name + '.wxs',
@@ -405,14 +402,16 @@ def BuildEnterpriseInstallerFromStandaloneInstaller(
       product_name_legal_identifier,
       msi_product_version,
       product_version,
-      '"%s"' % product_guid,
+      f'"{product_guid}"',
       product_custom_params=product_custom_params,
-      standalone_installer_path=str(env.File(standalone_installer_path).abspath),
+      standalone_installer_path=str(
+          env.File(standalone_installer_path).abspath),
       custom_action_dll_path=str(env.File(custom_action_dll_path).abspath),
       product_uninstaller_additional_args=product_uninstaller_additional_args,
       msi_product_id=msi_product_id,
       msi_upgradecode_guid=msi_upgradecode_guid,
-      product_installer_data=product_installer_data)
+      product_installer_data=product_installer_data,
+  )
 
   wix_env.Append(
       WIXCANDLEFLAGS=wix_candle_flags,
@@ -420,8 +419,8 @@ def BuildEnterpriseInstallerFromStandaloneInstaller(
   )
 
   wix_output = wix_env.WiX(
-      target = output_directory_name + '/' + 'unsigned_' + msi_name,
-      source = [copy_target],
+      target=f'{output_directory_name}/unsigned_{msi_name}',
+      source=[copy_target],
   )
 
   # Force a rebuild when the standalone installer changes.
@@ -433,8 +432,6 @@ def BuildEnterpriseInstallerFromStandaloneInstaller(
                                custom_action_dll_path])
 
   sign_output = wix_env.SignedBinary(
-      target=output_directory_name + '/' + msi_name,
-      source=wix_output,
-  )
+      target=f'{output_directory_name}/{msi_name}', source=wix_output)
 
-  return env.Replicate(output_dir + '/' + output_directory_name, sign_output)
+  return env.Replicate(f'{output_dir}/{output_directory_name}', sign_output)
