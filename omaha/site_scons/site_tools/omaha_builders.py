@@ -52,14 +52,12 @@ def OmahaCertificateTag(env, target, source):
                      '"$MAIN_DIR/../common/certificate_tag/certificate_tag.go"')
   magic_bytes = 'Gact2.0Omaha'
   padded_length = len(magic_bytes) + 2 + 8192
-  certificate_tag_cmd = env.Command(
+  return env.Command(
       target=target,
       source=source,
-      action=certificate_tag + ' -set-superfluous-cert-tag=' + magic_bytes +
-      ' -padded-length=' + str(padded_length) + ' -out $TARGET $SOURCE',
+      action=
+      f'{certificate_tag} -set-superfluous-cert-tag={magic_bytes} -padded-length={str(padded_length)} -out $TARGET $SOURCE',
   )
-
-  return certificate_tag_cmd
 
 
 def OmahaCertificateTagForTesting(env,
@@ -100,17 +98,14 @@ def OmahaCertificateTagForTesting(env,
   bin_tag = bytearray(binascii.hexlify(magic_bytes.encode()))
   bin_tag.extend(binascii.hexlify(struct.pack('>H', tag_length)))
   bin_tag.extend(binascii.hexlify(tag.encode()))
-  full_tag_encoded = '0x' + bin_tag.decode()
+  full_tag_encoded = f'0x{bin_tag.decode()}'
   padded_length = len(bin_tag) + 8192
-  certificate_tag_cmd = env.Command(
+  return env.Command(
       target=target,
       source=source,
-      action=certificate_tag + ' -set-superfluous-cert-tag=' +
-      full_tag_encoded + ' -padded-length=' + str(padded_length) +
-      ' -out $TARGET $SOURCE',
+      action=
+      f'{certificate_tag} -set-superfluous-cert-tag={full_tag_encoded} -padded-length={str(padded_length)} -out $TARGET $SOURCE',
   )
-
-  return certificate_tag_cmd
 
 def OmahaTagExe(env, target, source, tag):
   """Tags an EXE using ApplyTag.
@@ -126,13 +121,11 @@ def OmahaTagExe(env, target, source, tag):
   """
 
   tag_exe = '$MAIN_DIR/internal/tools/ApplyTag.exe'
-  tag_cmd = env.Command(
+  return env.Command(
       target=target,
       source=source,
-      action='"%s" $SOURCES $TARGET %s append' % (tag_exe, tag),
+      action=f'"{tag_exe}" $SOURCES $TARGET {tag} append',
   )
-
-  return tag_cmd
 
 def OmahaBuildTestExe(env, version, major, minor, build, patch):
   """Builds e.g. test_foo_v1_0_101_1.exe
@@ -142,35 +135,35 @@ def OmahaBuildTestExe(env, version, major, minor, build, patch):
   """
   exe_env = env.Clone()
   exe_env.Append(
-      LIBS = [
+      LIBS=[
           exe_env['crt_libs'][exe_env.Bit('debug')],
           'version.lib',
-          ],
-      RCFLAGS = [
-          '-DVERSION_STRING=%s' % version,
-          '-DMAJOR=%s' % major,
-          '-DMINOR=%s' % minor,
-          '-DBUILD=%s' % build,
-          '-DPATCH=%s' % patch
-          ],
+      ],
+      RCFLAGS=[
+          f'-DVERSION_STRING={version}',
+          f'-DMAJOR={major}',
+          f'-DMINOR={minor}',
+          f'-DBUILD={build}',
+          f'-DPATCH={patch}',
+      ],
   )
-  exe_env['OBJPREFIX'] = '%s%s/' % (exe_env['OBJPREFIX'], version)
-  base_name = 'test_foo_v%s' % version.replace('.', '_')
-  signed_target_name = base_name + '.exe'
-  target_name = base_name + '_unsigned'
+  exe_env['OBJPREFIX'] = f"{exe_env['OBJPREFIX']}{version}/"
+  base_name = f"test_foo_v{version.replace('.', '_')}"
+  signed_target_name = f'{base_name}.exe'
+  target_name = f'{base_name}_unsigned'
   unsigned_exe = exe_env.ComponentTestProgram(
       prog_name=target_name,
       source=[
           '$OBJ_ROOT/testing/test_foo.cc',
-          exe_env.RES('$OBJ_ROOT/testing/test_foo_v%s.res' % version, 'test_foo.rc'),
-          ],
-      COMPONENT_TEST_RUNNABLE=False
+          exe_env.RES(f'$OBJ_ROOT/testing/test_foo_v{version}.res',
+                      'test_foo.rc'),
+      ],
+      COMPONENT_TEST_RUNNABLE=False,
   )
-  signed_output = exe_env.DualSignedBinary(
+  return exe_env.DualSignedBinary(
       target=signed_target_name,
       source=unsigned_exe,
   )
-  return signed_output
 
 def OmahaBuildTestMsi(env, version, namespace, exe_name, wxs_template, msi_base_name, prefix=''):
   """Builds a test MSI from an exe.
@@ -182,45 +175,26 @@ def OmahaBuildTestMsi(env, version, namespace, exe_name, wxs_template, msi_base_
   # Have to use 'copy' here because we are renaming the file, and it is being
   # renamed to match the final msi name to avoid collisions in the wixobj files.
   copy_target = env.Command(
-      target=msi_base_name + '.wxs',
+      target=f'{msi_base_name}.wxs',
       source=wxs_template,
       action='@copy /y $SOURCE $TARGET',
   )
-  PRODUCT_GUID = ei_utils.GenerateNameBasedGUID(
-      namespace,
-      'Product ' + version
-  )
-  COMPONENT_GUID = ei_utils.GenerateNameBasedGUID(
-      namespace,
-      'Component ' + version
-  )
+  PRODUCT_GUID = ei_utils.GenerateNameBasedGUID(namespace, f'Product {version}')
+  COMPONENT_GUID = ei_utils.GenerateNameBasedGUID(namespace,
+                                                  f'Component {version}')
   COMPONENT_GUID_REGISTRY = ei_utils.GenerateNameBasedGUID(
-      namespace,
-      'Component Registry ' + version
-  )
-  COMPONENT_GUID_NOTIFY_SUCCESS = (
-      ei_utils.GenerateNameBasedGUID(
-          namespace,
-          'Component Notify Success ' + version
-      ))
-  COMPONENT_GUID_REGISTER_LAUNCH = (
-      ei_utils.GenerateNameBasedGUID(
-          namespace,
-          'Component Register Launch Command ' + version
-      ))
-  COMPONENT_GUID_NOTIFY_FAILED = (
-      ei_utils.GenerateNameBasedGUID(
-          namespace,
-          'Component Notify Failed ' + version
-      ))
-  COMPONENT_GUID_PROPERTY_BAR = (
-      ei_utils.GenerateNameBasedGUID(
-          namespace,
-          'Component Property Bar ' + version
-      ))
+      namespace, f'Component Registry {version}')
+  COMPONENT_GUID_NOTIFY_SUCCESS = ei_utils.GenerateNameBasedGUID(
+      namespace, f'Component Notify Success {version}')
+  COMPONENT_GUID_REGISTER_LAUNCH = ei_utils.GenerateNameBasedGUID(
+      namespace, f'Component Register Launch Command {version}')
+  COMPONENT_GUID_NOTIFY_FAILED = ei_utils.GenerateNameBasedGUID(
+      namespace, f'Component Notify Failed {version}')
+  COMPONENT_GUID_PROPERTY_BAR = ei_utils.GenerateNameBasedGUID(
+      namespace, f'Component Property Bar {version}')
   wix_env = env.Clone()
   wix_env.Append(
-      WIXLIGHTFLAGS = [
+      WIXLIGHTFLAGS=[
           # Add a supress for:
           # warning LGHT1076 : ICE91: The file will be installed to the per user
           # directory that doesn't vary based on ALLUSERS value. This file won't
@@ -229,31 +203,25 @@ def OmahaBuildTestMsi(env, version, namespace, exe_name, wxs_template, msi_base_
           # This warning is generated by light when we produce a user only
           # installer, and can be ignored as this is a user only installer.
           '-sw1076'
-          ],
-      WIXCANDLEFLAGS = [
-          '-dFooExePath=' + wix_env.File(exe_name).abspath,
-          '-dFooVersion=' + version,
-          '-dFooProductGuid=' + PRODUCT_GUID,
-          '-dFooComponentGuid=' + COMPONENT_GUID,
-          '-dFooComponentGuidRegistry=' + COMPONENT_GUID_REGISTRY,
-          '-dFooComponentGuidNotifySuccess=' + COMPONENT_GUID_NOTIFY_SUCCESS,
-          '-dFooComponentRegisterLaunchCommand=' +
-              COMPONENT_GUID_REGISTER_LAUNCH,
-          '-dFooComponentGuidNotifyFailed=' + COMPONENT_GUID_NOTIFY_FAILED,
-          '-dFooComponentGuidPropertyBar=' + COMPONENT_GUID_PROPERTY_BAR,
-          ],
+      ],
+      WIXCANDLEFLAGS=[
+          f'-dFooExePath={wix_env.File(exe_name).abspath}',
+          f'-dFooVersion={version}',
+          f'-dFooProductGuid={PRODUCT_GUID}',
+          f'-dFooComponentGuid={COMPONENT_GUID}',
+          f'-dFooComponentGuidRegistry={COMPONENT_GUID_REGISTRY}',
+          f'-dFooComponentGuidNotifySuccess={COMPONENT_GUID_NOTIFY_SUCCESS}',
+          f'-dFooComponentRegisterLaunchCommand={COMPONENT_GUID_REGISTER_LAUNCH}',
+          f'-dFooComponentGuidNotifyFailed={COMPONENT_GUID_NOTIFY_FAILED}',
+          f'-dFooComponentGuidPropertyBar={COMPONENT_GUID_PROPERTY_BAR}',
+      ],
   )
   wix_inputs = copy_target
   wix_env['WIXCANDLEFLAGS'] += ['-dIsEnterprise=0']
-  unsigned_msi = wix_env.WiX('unsigned_%s.msi' % msi_base_name, wix_inputs)
+  unsigned_msi = wix_env.WiX(f'unsigned_{msi_base_name}.msi', wix_inputs)
   # Force a rebuild when the exe file changes.
   wix_env.Depends(unsigned_msi, [exe_name])
-  # Single-signed here because it is not possible to dual-sign an msi.
-  signed_output = env.SignedBinary(
-      target=msi_base_name + '.msi',
-      source=unsigned_msi,
-  )
-  return signed_output
+  return env.SignedBinary(target=f'{msi_base_name}.msi', source=unsigned_msi)
 
 #
 # Custom Library and Program builders.
@@ -375,28 +343,40 @@ def ConfigureEnvFor64Bit(env):
       '$WINDOWS_SDK_10_0_VERSION')
 
   lib_paths = {
-      omaha_version_utils.VC80: [ '$VC80_DIR/vc/lib/amd64',
-                                  '$ATLMFC_VC80_DIR/lib/amd64',
-                                  '$PLATFORM_SDK_VISTA_6_0_DIR/lib/x64' ],
-      omaha_version_utils.VC100: [ '$VC10_0_DIR/vc/lib/amd64',
-                                   '$ATLMFC_VC10_0_DIR/lib/amd64',
-                                   '$PLATFORM_SDK_VC10_0_DIR/lib/x64' ],
-      omaha_version_utils.VC120: [ '$VC12_0_DIR/vc/lib/amd64',
-                                   '$ATLMFC_VC12_0_DIR/lib/amd64',
-                                   '$WINDOWS_SDK_8_1_DIR/lib/winv6.3/um/x64' ],
-      omaha_version_utils.VC140: [ '$VC14_0_DIR/vc/lib/amd64',
-                                   '$ATLMFC_VC14_0_DIR/lib/amd64',
-                                   platform_sdk_lib_dir + '/um/x64',
-                                   platform_sdk_lib_dir + '/ucrt/x64',],
-      omaha_version_utils.VC150: [ '$VC15_0_DIR/lib/x64',
-                                   '$ATLMFC_VC15_0_DIR/lib/x64',
-                                   '$WINDOWS_SDK_10_0_LIB_DIR/um/x64',
-                                   '$WINDOWS_SDK_10_0_LIB_DIR/ucrt/x64',],
-      omaha_version_utils.VC160: [ '$VC16_0_DIR/lib/x64',
-                                   '$ATLMFC_VC16_0_DIR/lib/x64',
-                                   '$WINDOWS_SDK_10_0_LIB_DIR/um/x64',
-                                   '$WINDOWS_SDK_10_0_LIB_DIR/ucrt/x64',],
-      }[env['msc_ver']]
+      omaha_version_utils.VC80: [
+          '$VC80_DIR/vc/lib/amd64',
+          '$ATLMFC_VC80_DIR/lib/amd64',
+          '$PLATFORM_SDK_VISTA_6_0_DIR/lib/x64',
+      ],
+      omaha_version_utils.VC100: [
+          '$VC10_0_DIR/vc/lib/amd64',
+          '$ATLMFC_VC10_0_DIR/lib/amd64',
+          '$PLATFORM_SDK_VC10_0_DIR/lib/x64',
+      ],
+      omaha_version_utils.VC120: [
+          '$VC12_0_DIR/vc/lib/amd64',
+          '$ATLMFC_VC12_0_DIR/lib/amd64',
+          '$WINDOWS_SDK_8_1_DIR/lib/winv6.3/um/x64',
+      ],
+      omaha_version_utils.VC140: [
+          '$VC14_0_DIR/vc/lib/amd64',
+          '$ATLMFC_VC14_0_DIR/lib/amd64',
+          f'{platform_sdk_lib_dir}/um/x64',
+          f'{platform_sdk_lib_dir}/ucrt/x64',
+      ],
+      omaha_version_utils.VC150: [
+          '$VC15_0_DIR/lib/x64',
+          '$ATLMFC_VC15_0_DIR/lib/x64',
+          '$WINDOWS_SDK_10_0_LIB_DIR/um/x64',
+          '$WINDOWS_SDK_10_0_LIB_DIR/ucrt/x64',
+      ],
+      omaha_version_utils.VC160: [
+          '$VC16_0_DIR/lib/x64',
+          '$ATLMFC_VC16_0_DIR/lib/x64',
+          '$WINDOWS_SDK_10_0_LIB_DIR/um/x64',
+          '$WINDOWS_SDK_10_0_LIB_DIR/ucrt/x64',
+      ],
+  }[env['msc_ver']]
 
   env.Prepend(LIBPATH=lib_paths)
 
@@ -463,8 +443,8 @@ def GetMultiarchLibName(env, lib_name):
   Returns:
     The appropriate library name.
   """
-  filename = (lib_name, '%s_64' % lib_name)[env.Bit('x64')]
-  return '$LIB_DIR/' + filename + '.lib'
+  filename = lib_name, f'{lib_name}_64'[env.Bit('x64')]
+  return f'$LIB_DIR/{filename}.lib'
 
 
 def ComponentStaticLibraryMultiarch(env, lib_name, *args, **kwargs):
@@ -489,9 +469,8 @@ def ComponentStaticLibraryMultiarch(env, lib_name, *args, **kwargs):
   kwargs64 = deepcopy(kwargs)
 
   nodes32 = ComponentStaticLibrary(env.Clone(), lib_name, *args, **kwargs)
-  nodes64 = ComponentStaticLibrary(CloneAndMake64Bit(env),
-                                   '%s_64' % lib_name,
-                                   *args64, **kwargs64)
+  nodes64 = ComponentStaticLibrary(
+      CloneAndMake64Bit(env), f'{lib_name}_64', *args64, **kwargs64)
   return nodes32 + nodes64
 
 
@@ -514,9 +493,7 @@ def RelativePath(path, start):
       break
     i += 1
   rel_list = [os.path.pardir] * (len(start_list)-i) + path_list[i:]
-  if not rel_list:
-    return os.path.curdir
-  return os.path.join(*rel_list)
+  return os.path.join(*rel_list) if rel_list else os.path.curdir
 
 
 def CompileProtoBuf(env, input_proto_files):
@@ -535,10 +512,9 @@ def CompileProtoBuf(env, input_proto_files):
   Returns:
     Output node list of generated .cc files.
   """
-  proto_compiler_path = '"%s/protoc.exe"' % os.getenv('OMAHA_PROTOBUF_BIN_DIR',
-                                                    '$OBJ_ROOT/base/Default')
-  proto_path = env['PROTO_PATH']
+  proto_compiler_path = f""""{os.getenv('OMAHA_PROTOBUF_BIN_DIR', '$OBJ_ROOT/base/Default')}/protoc.exe\""""
   cpp_out = env['CPP_OUT']
+  proto_path = env['PROTO_PATH']
   # Generate the list of .pb.cc and .pb.h targets in the cpp_out dir.
   targets = [os.path.join(cpp_out, os.path.splitext(base)[0] + ext)
              for base in [RelativePath(in_file, proto_path)

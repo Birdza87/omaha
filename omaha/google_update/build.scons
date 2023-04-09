@@ -82,7 +82,7 @@ exe_inputs = [
 
 # Compile .rc files, then add the resulting .res files to the exe inputs.
 for language in shell_languages:
-  exe_inputs += exe_env.RES('generated_resources_%s.rc' % language)
+  exe_inputs += exe_env.RES(f'generated_resources_{language}.rc')
 
 # Force a rebuild when the version changes. The en file should be enough to
 # rebuild all languages.

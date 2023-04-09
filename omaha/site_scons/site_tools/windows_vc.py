@@ -56,7 +56,7 @@ def SetMsvcCompilerVersion(
     if not vc_flavor:
       vc_flavor = 'x64_x86'
     if vc_flavor not in ['x86_x86', 'x86_x64', 'x64_x86', 'x64_x64']:
-      raise ValueError('Invalid vc_flavor %s.' % str(vc_flavor))
+      raise ValueError(f'Invalid vc_flavor {str(vc_flavor)}.')
 
   if version_num == 16.0:
     env.Replace(VC16_0_DIR=os.environ.get('VCToolsInstallDir'))
@@ -69,23 +69,18 @@ def SetMsvcCompilerVersion(
                             vc_version='15.0',
                             vc_flavor=vc_flavor)
   else:
-    raise ValueError('Unknown MSVC compiler version: "%s".' % version_num)
+    raise ValueError(f'Unknown MSVC compiler version: "{version_num}".')
 
 
 def _SetMsvcCompilerVersion(env, vc_version, vc_flavor='x64_x86'):
-  if (vc_flavor == 'x86_x64' or vc_flavor == 'x64_x64'):
-    flavor = 'amd64'
-  else:
-    flavor = 'x86'
-
+  flavor = 'amd64' if vc_flavor in ['x86_x64', 'x64_x64'] else 'x86'
   vc_install_dir = os.environ.get('VCToolsInstallDir')
   vc_redist_dir = os.environ.get('VCToolsRedistDir')
 
   platform_sdk_dir = os.environ.get('OMAHA_PLATFORM_SDK_DIR')
   platform_sdk_version = os.environ.get('OMAHA_WINDOWS_SDK_10_0_VERSION')
-  platform_sdk_include_dir = (platform_sdk_dir + 'include/' +
-                              platform_sdk_version)
-  platform_sdk_lib_dir = platform_sdk_dir + 'lib/' + platform_sdk_version
+  platform_sdk_include_dir = f'{platform_sdk_dir}include/{platform_sdk_version}'
+  platform_sdk_lib_dir = f'{platform_sdk_dir}lib/{platform_sdk_version}'
 
   env['GOOGLECLIENT'] = '$MAIN_DIR/..'
   env['GOOGLE3'] = '$GOOGLECLIENT'
@@ -109,71 +104,68 @@ def _SetMsvcCompilerVersion(env, vc_version, vc_flavor='x64_x86'):
   env['ENV']['LIB'] = ''
 
   tools_paths = []
-  include_paths = []
   lib_paths = []
 
-  vc_bin_dir = vc_install_dir + '/bin'
+  vc_bin_dir = f'{vc_install_dir}/bin'
   vc_first_bin_dir = ''
   vc_second_bin_dir = ''
-  if vc_flavor == 'x86_x86':
-    vc_first_bin_dir = vc_bin_dir + '/Hostx86/x86'
-  elif vc_flavor == 'x64_x64':
-    vc_first_bin_dir = vc_bin_dir + '/Hostx64/x64'
-  elif vc_flavor == 'x86_x64':
-    vc_first_bin_dir = vc_bin_dir + '/Hostx86/x64'
-    vc_second_bin_dir = vc_bin_dir + '/Hostx86/x86'
+  if vc_flavor == 'x64_x64':
+    vc_first_bin_dir = f'{vc_bin_dir}/Hostx64/x64'
   elif vc_flavor == 'x64_x86':
-    vc_first_bin_dir = vc_bin_dir + '/Hostx64/x86'
-    vc_second_bin_dir = vc_bin_dir + '/HostX64/x64'
+    vc_first_bin_dir = f'{vc_bin_dir}/Hostx64/x86'
+    vc_second_bin_dir = f'{vc_bin_dir}/HostX64/x64'
 
-  tools_paths += [vc_first_bin_dir,
-                  vc_second_bin_dir,  # can be empty
-                  vc_install_dir + '/team_tools/performance_tools',
-                  vc_install_dir + '/Shared/Common/VSPerfCollectionTools']
-  include_paths.append(vc_install_dir + '/include')
-  if (vc_flavor == 'x64_x86' or vc_flavor == 'x86_x86'):
-    tools_paths += [
-        vc_redist_dir + '/x86/Microsoft.VC141.CRT',
-    ]
-    lib_paths.append(vc_install_dir + '/lib/x86')
-    tools_paths.append(platform_sdk_dir + '/bin/x86')
-  elif (vc_flavor == 'x64_x64' or vc_flavor == 'x86_x64'):
-    tools_paths += [
-        vc_redist_dir + '/x64/Microsoft.VC141.CRT',
-    ]
-    lib_paths.append(vc_install_dir + '/lib/x64')
-    tools_paths.append(platform_sdk_dir + '/bin/x64')
+  elif vc_flavor == 'x86_x64':
+    vc_first_bin_dir = f'{vc_bin_dir}/Hostx86/x64'
+    vc_second_bin_dir = f'{vc_bin_dir}/Hostx86/x86'
+  elif vc_flavor == 'x86_x86':
+    vc_first_bin_dir = f'{vc_bin_dir}/Hostx86/x86'
+  tools_paths += [
+      vc_first_bin_dir,
+      vc_second_bin_dir,
+      f'{vc_install_dir}/team_tools/performance_tools',
+      f'{vc_install_dir}/Shared/Common/VSPerfCollectionTools',
+  ]
+  include_paths = [f'{vc_install_dir}/include']
+  if vc_flavor in ['x64_x86', 'x86_x86']:
+    tools_paths += [f'{vc_redist_dir}/x86/Microsoft.VC141.CRT']
+    lib_paths.append(f'{vc_install_dir}/lib/x86')
+    tools_paths.append(f'{platform_sdk_dir}/bin/x86')
+  elif vc_flavor in ['x64_x64', 'x86_x64']:
+    tools_paths += [f'{vc_redist_dir}/x64/Microsoft.VC141.CRT']
+    lib_paths.append(f'{vc_install_dir}/lib/x64')
+    tools_paths.append(f'{platform_sdk_dir}/bin/x64')
 
   include_paths += [
-      platform_sdk_include_dir + '/um',
-      platform_sdk_include_dir + '/shared',
-      platform_sdk_include_dir + '/ucrt',
+      f'{platform_sdk_include_dir}/um',
+      f'{platform_sdk_include_dir}/shared',
+      f'{platform_sdk_include_dir}/ucrt',
   ]
 
   if vc_flavor == 'x86_x86':
     lib_paths += [
-        platform_sdk_lib_dir + '/um/x86',
-        platform_sdk_lib_dir + '/ucrt/x86',
+        f'{platform_sdk_lib_dir}/um/x86',
+        f'{platform_sdk_lib_dir}/ucrt/x86',
     ]
-    tools_paths.append(platform_sdk_dir + '/bin/x86')
+    tools_paths.append(f'{platform_sdk_dir}/bin/x86')
   elif vc_flavor == 'x64_x64':
     lib_paths += [
-        platform_sdk_lib_dir + '/um/x64',
-        platform_sdk_lib_dir + '/ucrt/x64',
+        f'{platform_sdk_lib_dir}/um/x64',
+        f'{platform_sdk_lib_dir}/ucrt/x64',
     ]
-    tools_paths.append(platform_sdk_dir + '/bin/x64')
+    tools_paths.append(f'{platform_sdk_dir}/bin/x64')
   elif vc_flavor == 'x64_x86':
     lib_paths += [
-        platform_sdk_lib_dir + '/um/x86',
-        platform_sdk_lib_dir + '/ucrt/x86',
+        f'{platform_sdk_lib_dir}/um/x86',
+        f'{platform_sdk_lib_dir}/ucrt/x86',
     ]
-    tools_paths.append(platform_sdk_dir + '/bin/x64')
+    tools_paths.append(f'{platform_sdk_dir}/bin/x64')
   elif vc_flavor == 'x86_x64':
     lib_paths += [
-        platform_sdk_lib_dir + '/um/x64',
-        platform_sdk_lib_dir + '/ucrt/x64',
+        f'{platform_sdk_lib_dir}/um/x64',
+        f'{platform_sdk_lib_dir}/ucrt/x64',
     ]
-    tools_paths.append(platform_sdk_dir + '/bin/x86')
+    tools_paths.append(f'{platform_sdk_dir}/bin/x86')
 
   for p in tools_paths:
     env.AppendENVPath('PATH', env.Dir(p).abspath)

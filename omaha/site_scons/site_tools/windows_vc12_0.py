@@ -71,9 +71,8 @@ def _SetMsvcCompiler(
   env['ENV']['LIB'] = ''
 
   tools_paths = []
-  include_paths = []
   lib_paths = []
-  vc_bin_dir = vc_dir + '/vc/bin'
+  vc_bin_dir = f'{vc_dir}/vc/bin'
   if vc_flavor == 'amd64':
     vc_bin_dir += '/amd64'
   elif vc_flavor == 'x86_amd64':
@@ -81,33 +80,33 @@ def _SetMsvcCompiler(
 
   tools_paths += [vc_bin_dir,]
 
-  include_paths.append(vc_dir + '/vc/include')
+  include_paths = [f'{vc_dir}/vc/include']
   if vc_flavor == 'x86':
-    lib_paths.append(vc_dir + '/vc/lib')
+    lib_paths.append(f'{vc_dir}/vc/lib')
   else:
-    lib_paths.append(vc_dir + '/vc/lib/amd64')
+    lib_paths.append(f'{vc_dir}/vc/lib/amd64')
 
   # Add explicit location of platform SDK to tools path
-  tools_paths.append(platform_sdk_dir + '/bin')
+  tools_paths.append(f'{platform_sdk_dir}/bin')
   include_paths += [
-      platform_sdk_dir + '/include',         # Platform SDKs up to Vista (incl.)
-      platform_sdk_dir + '/include/um',      # Windows SDKs
-      platform_sdk_dir + '/include/shared',  # Windows SDKs
+      f'{platform_sdk_dir}/include',
+      f'{platform_sdk_dir}/include/um',
+      f'{platform_sdk_dir}/include/shared',
   ]
   if vc_flavor == 'x86':
     lib_paths += [
-        platform_sdk_dir + '/lib',  # Platform SDKs up to Vista (incl.)
-        platform_sdk_dir + '/lib/winv6.3/um/x86',  # Windows SDK 8.1
+        f'{platform_sdk_dir}/lib',
+        f'{platform_sdk_dir}/lib/winv6.3/um/x86',
     ]
-    tools_paths.append(platform_sdk_dir + '/bin/x86')  # VC 12 only
+    tools_paths.append(f'{platform_sdk_dir}/bin/x86')
   else:
     lib_paths += [
-        platform_sdk_dir + '/lib/x64',  # Platform SDKs up to Vista (incl.)
-        platform_sdk_dir + '/lib/winv6.3/um/x64',  # Windows SDK 8.1
+        f'{platform_sdk_dir}/lib/x64',
+        f'{platform_sdk_dir}/lib/winv6.3/um/x64',
     ]
     # VC 12 needs this, otherwise mspdb120.dll will not be found.
-    tools_paths.append(vc_dir + '/vc/bin')
-    tools_paths.append(platform_sdk_dir + '/bin/x64')  # VC 12 only
+    tools_paths.append(f'{vc_dir}/vc/bin')
+    tools_paths.append(f'{platform_sdk_dir}/bin/x64')
 
   for p in tools_paths:
     env.AppendENVPath('PATH', env.Dir(p).abspath)

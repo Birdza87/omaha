@@ -47,13 +47,13 @@ for omaha_version_info in local_env['omaha_versions_info']:
     )
 
     # Avoid conflicts in obj targets
-    lang_env['OBJSUFFIX'] = '_' + lang + lang_env['OBJSUFFIX']
-    lang_env['OBJPREFIX'] = '%s/%s' % (lang, prefix) + lang_env['OBJPREFIX']
+    lang_env['OBJSUFFIX'] = f'_{lang}' + lang_env['OBJSUFFIX']
+    lang_env['OBJPREFIX'] = f'{lang}/{prefix}' + lang_env['OBJPREFIX']
 
-    lang_base_name = 'generated_resources_' + lang
+    lang_base_name = f'generated_resources_{lang}'
     lang_res = lang_env.RES(
-        target='%s%s.res' % (prefix, lang_base_name),
-        source='goopdateres/%s.rc' % (lang_base_name),
+        target=f'{prefix}{lang_base_name}.res',
+        source=f'goopdateres/{lang_base_name}.rc',
     )
 
     # Force a rebuild when the version changes.
@@ -68,13 +68,11 @@ for omaha_version_info in local_env['omaha_versions_info']:
 
     # Build the (unsigned) DLL
     unsigned_dll = lang_env.ComponentLibrary(
-        lib_name='%s/%sgoopdateres_unsigned_%s' % (lang, prefix, lang),
-        source=lang_inputs
+        lib_name=f'{lang}/{prefix}goopdateres_unsigned_{lang}',
+        source=lang_inputs,
     )
 
     signed_dll = lang_env.DualSignedBinary(
-        target='%s/%sgoopdateres_%s.dll' % (lang, prefix, lang),
-        source=unsigned_dll,
-    )
+        target=f'{lang}/{prefix}goopdateres_{lang}.dll', source=unsigned_dll)
 
     env.Replicate('$STAGING_DIR', signed_dll)

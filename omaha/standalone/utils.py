@@ -30,26 +30,21 @@ def GenerateUpdateResponseFile(target, sources, version_list, has_x64_binaries):
   xml_header = '<?xml version="1.0" encoding="UTF-8"?>\n'
   response_header = '<response protocol="3.0">'
   response_footer = '</response>'
-  arch_requirement = 'x86'
-  if has_x64_binaries:
-    arch_requirement = 'x64'
-
+  arch_requirement = 'x64' if has_x64_binaries else 'x86'
   manifest_content_list = [xml_header, response_header]
   for file_index in range(0, len(sources), 2):
     source_manifest_path = sources[file_index]
     binary_path = sources[file_index + 1]
     size = os.stat(os.path.abspath(binary_path)).st_size
     data = array.array('B')
-    installer_file = open(os.path.abspath(binary_path), mode='rb')
-    data.fromfile(installer_file, size)
-    installer_file.close()
+    with open(os.path.abspath(binary_path), mode='rb') as installer_file:
+      data.fromfile(installer_file, size)
     sha256 = hashlib.sha256()
     sha256.update(data)
     hash_value = sha256.hexdigest()
 
-    manifest_file = open(os.path.abspath(source_manifest_path))
-    manifest_content = manifest_file.read()
-    manifest_file.close()
+    with open(os.path.abspath(source_manifest_path)) as manifest_file:
+      manifest_content = manifest_file.read()
     response_body_start_index = manifest_content.find('<response')
     if response_body_start_index < 0:
       raise Exception('GUP file does not contain response element.')
@@ -72,23 +67,19 @@ def GenerateUpdateResponseFile(target, sources, version_list, has_x64_binaries):
   manifest_content_list.append(response_footer)
 
   manifest_content_str = ''.join(manifest_content_list)
-  output_file = open(os.path.abspath(target), 'w')
-  output_file.write(manifest_content_str)
-  output_file.close()
+  with open(os.path.abspath(target), 'w') as output_file:
+    output_file.write(manifest_content_str)
 
 
 def WriteInstallerLog(log_fn, log_text, manifest_fn):
   """Save a log of what went into the installer."""
-  dump_data = ''
-  file_to_dump = open(os.path.abspath(manifest_fn), 'r')
-  content = file_to_dump.read()
-  file_to_dump.close()
-  dump_data += '\nMANIFEST:\n'
+  with open(os.path.abspath(manifest_fn), 'r') as file_to_dump:
+    content = file_to_dump.read()
+  dump_data = '' + '\nMANIFEST:\n'
   dump_data += str(manifest_fn)
   dump_data += '\n'
   dump_data += content
-  f = open(os.path.abspath(log_fn), 'w')
-  f.write(log_text)
-  f.write(dump_data)
-  f.close()
+  with open(os.path.abspath(log_fn), 'w') as f:
+    f.write(log_text)
+    f.write(dump_data)
   return 0

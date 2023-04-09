@@ -141,13 +141,12 @@ def _GenerateUpdateResponseFile(target, source, env):
   """Legacy scons wrapper for utils.GenerateUpdateResponseFile()."""
   local_env = env.Clone()
 
-  version_list = local_env['INSTALLER_VERSIONS']
-  if not version_list:
+  if version_list := local_env['INSTALLER_VERSIONS']:
+    standalone.utils.GenerateUpdateResponseFile(
+        str(target[0]), [str(s) for s in source], version_list,
+        has_x64_binaries=False)
+  else:
     raise Exception('INSTALLER_VERSIONS is missing from environment.')
-
-  standalone.utils.GenerateUpdateResponseFile(
-      str(target[0]), [str(s) for s in source], version_list,
-      has_x64_binaries=False)
 
 
 def BuildOfflineInstaller(

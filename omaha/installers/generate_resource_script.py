@@ -29,7 +29,7 @@ def GenerateResourceScript(input_filename, output_filename, payload_filename,
   f_int = open(input_filename, 'r')
   f_out = open(output_filename, 'w')
 
-  for line in f_int.readlines():
+  for line in f_int:
     f_out.write(re.sub(r'__RESOURCE_FILENAME__', resource_filename,
                 re.sub(r'__MANIFEST_FILENAME__', manifest_filename,
                 re.sub(r'__PAYLOAD_FILENAME__', payload_filename, line))))
@@ -47,13 +47,13 @@ if __name__ == '__main__':
   for (o, v) in opts:
     if o == '-i':
       input_filename = v
-    if o == '-o':
-      output_filename = v
-    if o == '-p':
-      payload_filename = v
-    if o == '-m':
+    elif o == '-m':
       manifest_filename = v
-    if o == '-r':
+    elif o == '-o':
+      output_filename = v
+    elif o == '-p':
+      payload_filename = v
+    elif o == '-r':
       resource_filename = v
 
   # The forward slashes prevent the RC compiler from trying to interpret

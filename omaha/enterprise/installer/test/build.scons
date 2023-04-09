@@ -18,6 +18,7 @@
 """ Build enterprise installer test.
 """
 
+
 Import('env')
 
 from standalone import standalone_installer
@@ -55,7 +56,7 @@ test_setup_env.ComponentProgram(
 for omaha_version_info in env['omaha_versions_info']:
   prefix = omaha_version_info.filename_prefix
 
-  source_binary = '$OBJ_ROOT/mi_exe_stub/%smi_exe_stub.exe' % (prefix)
+  source_binary = f'$OBJ_ROOT/mi_exe_stub/{prefix}mi_exe_stub.exe'
 
   standalone_installer.BuildOfflineInstallersVersion(
       env,

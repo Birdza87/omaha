@@ -26,7 +26,7 @@ import string
 from installers import build_metainstaller
 
 _RECOVERY_MARKUP_DLL_BASE_NAME = 'recovery_markup'
-_RECOVERY_MARKUP_DLL = _RECOVERY_MARKUP_DLL_BASE_NAME + '.dll'
+_RECOVERY_MARKUP_DLL = f'{_RECOVERY_MARKUP_DLL_BASE_NAME}.dll'
 
 def _BuildSetup(omaha_versions_info, is_repair = False):
   # Build the meta-installer for each version.
@@ -35,7 +35,7 @@ def _BuildSetup(omaha_versions_info, is_repair = False):
   for omaha_version_info in omaha_versions_info:
     prefix = omaha_version_info.filename_prefix
 
-    source_binary = '$OBJ_ROOT/mi_exe_stub/%smi_exe_stub.exe' % prefix
+    source_binary = f'$OBJ_ROOT/mi_exe_stub/{prefix}mi_exe_stub.exe'
 
     if is_repair:
       _BuildSetupRepairVersion(omaha_version_info,
@@ -57,19 +57,19 @@ def _BuildSetupRepairVersion(omaha_version_info,
   # Build the target setup executable by merging the empty metafile
   # with the resource dll built earlier
   merged_output = env.Command(
-      target='%smi_exe_stub_repair.exe' % (prefix),
-      source=[source_binary, '$OBJ_ROOT/installers/' + _RECOVERY_MARKUP_DLL],
+      target=f'{prefix}mi_exe_stub_repair.exe',
+      source=[source_binary, f'$OBJ_ROOT/installers/{_RECOVERY_MARKUP_DLL}'],
       action='@"$MAIN_DIR/tools/resmerge" --copyappend $SOURCES $TARGET',
   )
 
   build_metainstaller.BuildMetaInstaller(
       env=env,
-      target_name='%s%sSetup_repair.exe' % (prefix, product_name),
+      target_name=f'{prefix}{product_name}Setup_repair.exe',
       omaha_version_info=omaha_version_info,
       empty_metainstaller_path=merged_output,
       omaha_files_path='$STAGING_DIR',
-      prefix = prefix,
-      suffix = '_repair',
+      prefix=prefix,
+      suffix='_repair',
   )
 
 
@@ -78,7 +78,7 @@ def _BuildSetupVersion(omaha_version_info,
                        source_binary,
                        product_name,
                        prefix = ''):
-  target_name = '%s%sSetup.exe' % (prefix, product_name)
+  target_name = f'{prefix}{product_name}Setup.exe'
 
   build_metainstaller.BuildMetaInstaller(
       env=env,

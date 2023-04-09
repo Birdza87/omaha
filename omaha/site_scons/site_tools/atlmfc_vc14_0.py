@@ -29,10 +29,7 @@ def _FindLocalInstall():
     Path to tool (as a string), or None if not found.
   """
   default_dir = os.environ['VCINSTALLDIR'] + 'atlmfc'
-  if os.path.exists(default_dir):
-    return default_dir
-  else:
-    return None
+  return default_dir if os.path.exists(default_dir) else None
 
 
 def generate(env):

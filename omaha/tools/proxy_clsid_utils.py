@@ -29,30 +29,38 @@ customization_ut_file_name = (omaha_project_path +
 
 def _GetStatusOutput(cmd):
   """Return (status, output) of executing cmd in a shell."""
-  if os.name == "nt":
-    pipe = os.popen(cmd + " 2>&1", "r")
-    text = pipe.read()
-    sts = pipe.close()
-    if sts is None: sts = 0
-    if text[-1:] == "\n": text = text[:-1]
-    return sts, text
-  else:
+  if os.name != "nt":
     return subprocess.getstatusoutput(cmd)
+  pipe = os.popen(f"{cmd} 2>&1", "r")
+  text = pipe.read()
+  sts = pipe.close()
+  if sts is None: sts = 0
+  if text[-1:] == "\n": text = text[:-1]
+  return sts, text
 
 
 def _GenerateGuid():
   (status, guid) = _GetStatusOutput("uuidgen.exe /c")
   if status != 0:
-    raise SystemError("Failed to get GUID: %s" % guid)
+    raise SystemError(f"Failed to get GUID: {guid}")
   return guid
 
 
 def _GuidToCStructFormat(guid):
   return ("{0x%s, 0x%s, 0x%s, "
-          "{0x%s, 0x%s, 0x%s, 0x%s, 0x%s, 0x%s, 0x%s, 0x%s}}") % (
-              guid[0:8], guid[9:13], guid[14:18],
-              guid[19:21], guid[21:23], guid[24:26], guid[26:28],
-              guid[28:30], guid[30:32], guid[32:34], guid[34:36])
+          "{0x%s, 0x%s, 0x%s, 0x%s, 0x%s, 0x%s, 0x%s, 0x%s}}" % (
+              guid[:8],
+              guid[9:13],
+              guid[14:18],
+              guid[19:21],
+              guid[21:23],
+              guid[24:26],
+              guid[26:28],
+              guid[28:30],
+              guid[30:32],
+              guid[32:34],
+              guid[34:36],
+          ))
 
 
 def _GenerateProxySconsText(machine_proxy_clsid,
@@ -91,18 +99,16 @@ def _GenerateProxyClsidFile(machine_proxy_clsid,
                             user_proxy_clsid):
   proxy_clsid_output = _GenerateProxySconsText(machine_proxy_clsid,
                                                user_proxy_clsid)
-  f_out = open(proxy_clsid_file_name, "w")
-  f_out.write(proxy_clsid_output)
-  f_out.close()
+  with open(proxy_clsid_file_name, "w") as f_out:
+    f_out.write(proxy_clsid_output)
 
 
 def _GenerateCustomizationUnitTestFile(machine_proxy_clsid,
                                        user_proxy_clsid):
   customization_ut_output = _GenerateCustomizationUTText(machine_proxy_clsid,
                                                          user_proxy_clsid)
-  f_out = open(customization_ut_file_name, "w")
-  f_out.write(customization_ut_output)
-  f_out.close()
+  with open(customization_ut_file_name, "w") as f_out:
+    f_out.write(customization_ut_output)
 
 
 def _GenerateProxyClsidsFiles():
@@ -120,13 +126,11 @@ def _GenerateProxyClsidsFiles():
 
 def _GetProxyClsidsFromFile(target_proxy_clsid):
   proxy_clsid = ""
-  f = open(proxy_clsid_file_name, "r")
-  for line in f:
-    if not line.startswith("#") and target_proxy_clsid in line:
-      proxy_clsid = line[len(target_proxy_clsid):].rstrip()
-      break
-  f.close()
-
+  with open(proxy_clsid_file_name, "r") as f:
+    for line in f:
+      if not line.startswith("#") and target_proxy_clsid in line:
+        proxy_clsid = line[len(target_proxy_clsid):].rstrip()
+        break
   if not proxy_clsid:
     raise StandardError("Failed to get auto-generated proxy CLSID")
 

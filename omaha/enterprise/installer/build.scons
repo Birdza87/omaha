@@ -104,12 +104,14 @@ def _BuildSampleForTest():
          msi_custom_action_dll,
          msi_base_name) = product
 
-        product_custom_params = '&brand=' + combo[0] + '&ap=' + combo[1]
+        product_custom_params = f'&brand={combo[0]}&ap={combo[1]}'
 
         build_enterprise_installer.BuildEnterpriseInstaller(
             env,
             'Google',
-            product_name, product_version, product_guid,
+            product_name,
+            product_version,
+            product_guid,
             product_custom_params,
             product_installer_path,
             product_installer_install_command,
@@ -118,8 +120,8 @@ def _BuildSampleForTest():
             prefix + msi_base_name + '_' + combo[0],
             '$MAIN_DIR/enterprise/installer',
             msi_custom_action_dll,
-            '$STAGING_DIR/%sGoogleUpdateSetup.exe' % prefix,
-            output_dir = '$TARGET_ROOT/Test_Installers'
+            f'$STAGING_DIR/{prefix}GoogleUpdateSetup.exe',
+            output_dir='$TARGET_ROOT/Test_Installers',
         )
 
 # Builds a sample enterprise installer based on a standalone installer.
@@ -129,14 +131,14 @@ def _BuildSampleForTest():
 # Installer is busy. It takes a long time to fail because Omaha retries.
 # TODO(omaha): This is a bad example because it uses MSI. See above.
 def _BuildSampleStandaloneForTest():
+  msi_base_name = 'TestFoo_Installer_1.0.101.0'
+  BRAND = 'ENTC'
+  AP = 'enterprise-C'
   # Omaha only: Build the enterprise installer for each version of Omaha.
   for omaha_version_info in env['omaha_versions_info']:
     prefix = omaha_version_info.filename_prefix
 
-    msi_base_name = 'TestFoo_Installer_1.0.101.0'
-    BRAND = 'ENTC'
-    AP = 'enterprise-C'
-    product_custom_params = '&brand=' + BRAND + '&ap=' + AP
+    product_custom_params = f'&brand={BRAND}&ap={AP}'
 
     # Sample installer data, encoded for the command line. This sample uses a
     # JSON format but the format is app-specific.
@@ -152,12 +154,11 @@ def _BuildSampleStandaloneForTest():
         product_custom_params,
         '/silentuninstall',
         product_installer_data,
-        ('$TARGET_ROOT/Test_Installers/' +
-            '%sUNOFFICIAL_TestFooStandaloneInstaller.exe' % (prefix)),
+        f'$TARGET_ROOT/Test_Installers/{prefix}UNOFFICIAL_TestFooStandaloneInstaller.exe',
         CUSTOM_ACTION_DLL,
         prefix + msi_base_name + '_' + BRAND,
         '$MAIN_DIR/enterprise/installer',
-        output_dir = '$TARGET_ROOT/Test_Installers'
+        output_dir='$TARGET_ROOT/Test_Installers',
     )
 
 if BUILDING_WITH_GOOGLE_UPDATE:

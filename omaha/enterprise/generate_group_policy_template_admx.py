@@ -765,25 +765,28 @@ def GenerateGroupPolicyTemplateAdml(apps):
     if force_install_user:
       force_installs_explain += FORCE_INSTALLS_USER_EXPLAIN % app_name
 
-    app_category = ('Cat_' + app_legal_id, app_name)
+    app_category = f'Cat_{app_legal_id}', app_name
     string_definition_list.append(app_category)
 
     app_install_policy_explanation = (
-        'Explain_Install' + app_legal_id,
+        f'Explain_Install{app_legal_id}',
         'Specifies whether %s can be installed using Google Update/Google '
         'Installer.\n\n'
         'If this policy is not configured, %s can be installed as specified '
         'by "Allow installation default".\n\n'
         '%s'
-        '%s' % (app_name,
-                app_name,
-                force_installs_explain,
-                ADML_DOMAIN_REQUIREMENT_EN))
+        '%s' % (
+            app_name,
+            app_name,
+            force_installs_explain,
+            ADML_DOMAIN_REQUIREMENT_EN,
+        ),
+    )
 
     string_definition_list.append(app_install_policy_explanation)
 
     app_auto_update_policy_explanation = (
-        'Explain_AutoUpdate' + app_legal_id,
+        f'Explain_AutoUpdate{app_legal_id}',
         'Specifies how Google Update handles available %s updates '
         'from Google.\n\n'
         'If this policy is not configured, Google Update handles available '
@@ -801,12 +804,12 @@ def GenerateGroupPolicyTemplateAdml(apps):
         'updates using the application\'s manual update mechanism if '
         'available. If you disable updates, you should periodically check '
         'for updates and distribute them to users.%s\n\n'
-        '%s' %
-        (app_name, app_additional_help_msg, ADML_DOMAIN_REQUIREMENT_EN))
+        '%s' % (app_name, app_additional_help_msg, ADML_DOMAIN_REQUIREMENT_EN),
+    )
     string_definition_list.append(app_auto_update_policy_explanation)
 
     app_target_channel_explanation = (
-        'Explain_TargetChannel' + app_legal_id,
+        f'Explain_TargetChannel{app_legal_id}',
         'Specifies which Channel %s should be updated to.\n\n'
         'When this policy is enabled, the app will be updated to the Channel '
         'with this policy value.\n\nSome examples:\n'
@@ -818,11 +821,12 @@ def GenerateGroupPolicyTemplateAdml(apps):
         'latest beta version.\n'
         '2) Policy value is set to "dev": the app will be updated to the '
         'latest dev version.\n'
-        '%s' % (app_name, ADML_DOMAIN_REQUIREMENT_EN))
+        '%s' % (app_name, ADML_DOMAIN_REQUIREMENT_EN),
+    )
     string_definition_list.append(app_target_channel_explanation)
 
     app_target_version_prefix_explanation = (
-        'Explain_TargetVersionPrefix' + app_legal_id,
+        f'Explain_TargetVersionPrefix{app_legal_id}',
         'Specifies which version %s should be updated to.\n\n'
         'When this policy is enabled, the app will be updated to the version '
         'prefixed with this policy value.\n\nSome examples:\n'
@@ -834,11 +838,12 @@ def GenerateGroupPolicyTemplateAdml(apps):
         'version of 55.2 (e.g., 55.2.34 or 55.2.2).\n'
         '4) Policy value is "55.24.34": the app will be updated to this '
         'specific version only.\n\n'
-        '%s' % (app_name, ADML_DOMAIN_REQUIREMENT_EN))
+        '%s' % (app_name, ADML_DOMAIN_REQUIREMENT_EN),
+    )
     string_definition_list.append(app_target_version_prefix_explanation)
 
     app_rollback_to_target_version_explanation = (
-        'Explain_RollbackToTargetVersion' + app_legal_id,
+        f'Explain_RollbackToTargetVersion{app_legal_id}',
         'Specifies that Google Update should roll installations of %s back if '
         'the client has a higher version than that available.\n\n'
         'If this policy is not configured or is disabled, installs that have a '
@@ -851,14 +856,14 @@ def GenerateGroupPolicyTemplateAdml(apps):
         'that available will be downgraded to the highest available version, '
         'respecting any configured target Channel and target version.\n\n'
         '%s\n\n'
-        '%s' % (app_name, rollback_disclaimer, ADML_DOMAIN_REQUIREMENT_EN))
+        '%s' % (app_name, rollback_disclaimer, ADML_DOMAIN_REQUIREMENT_EN),
+    )
     string_definition_list.append(app_rollback_to_target_version_explanation)
 
-  app_resource_strings = []
-  for entry in string_definition_list:
-    app_resource_strings.append('      <string id="%s">%s</string>' %
-                                (entry[0], entry[1]))
-
+  app_resource_strings = [
+      f'      <string id="{entry[0]}">{entry[1]}</string>'
+      for entry in string_definition_list
+  ]
   app_resource_tables = (ADML_RESOURCE_TABLE_TEMPLATE %
                          ('\n'.join(app_resource_strings), ADML_PRESENTATIONS))
 

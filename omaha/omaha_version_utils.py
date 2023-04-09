@@ -119,23 +119,23 @@ def _GetMetainstallerPayloadFilenames(prefix,
   # TODO(omaha): Move the other filename defines in main.scons into this file
   # and allow all filenames to be customized.
   payload_files = [
-      '%s.exe' % _MAIN_EXE_BASE_NAME,
-      '%s.exe' % _CRASH_HANDLER_NAME,
-      '%sgoopdate.dll' % (prefix),
-      '%sHelper.msi' % _MAIN_EXE_BASE_NAME,
-      '%sBroker.exe' % _MAIN_EXE_BASE_NAME,
-      '%sOnDemand.exe' % _MAIN_EXE_BASE_NAME,
-      '%sComRegisterShell64.exe' % _MAIN_EXE_BASE_NAME,
-      '%spsmachine.dll' % (prefix),
-      '%spsmachine_64.dll' % (prefix),
-      '%spsuser.dll' % (prefix),
-      '%spsuser_64.dll' % (prefix),
-      ]
+      f'{_MAIN_EXE_BASE_NAME}.exe',
+      f'{_CRASH_HANDLER_NAME}.exe',
+      f'{prefix}goopdate.dll',
+      f'{_MAIN_EXE_BASE_NAME}Helper.msi',
+      f'{_MAIN_EXE_BASE_NAME}Broker.exe',
+      f'{_MAIN_EXE_BASE_NAME}OnDemand.exe',
+      f'{_MAIN_EXE_BASE_NAME}ComRegisterShell64.exe',
+      f'{prefix}psmachine.dll',
+      f'{prefix}psmachine_64.dll',
+      f'{prefix}psuser.dll',
+      f'{prefix}psuser_64.dll',
+  ]
 
   if _IsSupportedOmaha2Version(omaha_version):
-    payload_files.remove('%sBroker.exe' % _MAIN_EXE_BASE_NAME)
-    payload_files.remove('%sOnDemand.exe' % _MAIN_EXE_BASE_NAME)
-    payload_files.remove('%sComRegisterShell64.exe' % _MAIN_EXE_BASE_NAME)
+    payload_files.remove(f'{_MAIN_EXE_BASE_NAME}Broker.exe')
+    payload_files.remove(f'{_MAIN_EXE_BASE_NAME}OnDemand.exe')
+    payload_files.remove(f'{_MAIN_EXE_BASE_NAME}ComRegisterShell64.exe')
     payload_files.remove('psmachine.dll')
     payload_files.remove('psmachine_64.dll')
     payload_files.remove('psuser.dll')
@@ -151,23 +151,23 @@ def _GetMetainstallerPayloadFilenames(prefix,
       (omaha_version[2] >= 22 or
        (omaha_version[2] == 21 and omaha_version[3] >= 85))):
     # 64-bit crash handler is added on 1.3.21.85 and later
-    payload_files.append('%s64.exe' % _CRASH_HANDLER_NAME)
+    payload_files.append(f'{_CRASH_HANDLER_NAME}64.exe')
 
   if (omaha_version[0] >= 1 and
       omaha_version[1] >= 3 and
       (omaha_version[2] >= 32)):
     # added with 1.3.32.1 and later
-    payload_files.append('%sCore.exe' % _MAIN_EXE_BASE_NAME)
+    payload_files.append(f'{_MAIN_EXE_BASE_NAME}Core.exe')
 
   if (omaha_version[0] >= 1 and
       omaha_version[1] >= 3 and
       (omaha_version[2] > 36 or
        (omaha_version[2] == 36 and omaha_version[3] >= 61))):
     # GoogleUpdateHelper.msi was removed with version 1.3.36.61.
-    payload_files.remove('%sHelper.msi' % _MAIN_EXE_BASE_NAME)
+    payload_files.remove(f'{_MAIN_EXE_BASE_NAME}Helper.msi')
 
   for language in languages:
-    payload_files += ['%sgoopdateres_%s.dll' % (prefix, language)]
+    payload_files += [f'{prefix}goopdateres_{language}.dll']
 
   return payload_files
 
@@ -273,7 +273,7 @@ class OmahaVersionInfo(object):
       raise Exception('Invalid version delta.')
 
     if prefix and prefix != 'TEST_' and prefix != 'TEST2_':
-      raise Exception('Unrecognized prefix "%s"' % prefix)
+      raise Exception(f'Unrecognized prefix "{prefix}"')
 
     # If we're doing a patch, increment patch; else, increment build.
     if self.version_patch > 0:
@@ -318,7 +318,7 @@ class SignedFileInfo(object):
       base_name = unversioned_name
 
     self.filename_base = base_name
-    self.filename = '%s.%s' % (self.filename_base, extension)
+    self.filename = f'{self.filename_base}.{extension}'
 
-    self.unsigned_filename_base = '%s_unsigned' % base_name
-    self.unsigned_filename = '%s.%s' % (self.unsigned_filename_base, extension)
+    self.unsigned_filename_base = f'{base_name}_unsigned'
+    self.unsigned_filename = f'{self.unsigned_filename_base}.{extension}'

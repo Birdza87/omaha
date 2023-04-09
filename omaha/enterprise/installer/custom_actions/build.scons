@@ -28,7 +28,7 @@ def BuildShowErrorActionDll(omaha_version_info):
 
   prefix = omaha_version_info.filename_prefix
   if prefix:
-    dll_env['OBJPREFIX'] = dll_env.subst(prefix + 'obj/$OBJPREFIX')
+    dll_env['OBJPREFIX'] = dll_env.subst(f'{prefix}obj/$OBJPREFIX')
 
   dll_env.Append(
       LIBS = [
@@ -47,12 +47,11 @@ def BuildShowErrorActionDll(omaha_version_info):
   )
 
   signed_target_name = 'msi_custom_action'
-  target_name = '%s%s_unsigned' % (prefix, signed_target_name)
+  target_name = f'{prefix}{signed_target_name}_unsigned'
 
   version_res = dll_env.RES(
-      target='%s%s.res' % (prefix, signed_target_name),
-      source='msi_custom_action.rc',
-  )
+      target=f'{prefix}{signed_target_name}.res',
+      source='msi_custom_action.rc')
 
   # Force a rebuild when the version changes.
   dll_env.Depends(version_res, '$MAIN_DIR/VERSION')
@@ -72,9 +71,7 @@ def BuildShowErrorActionDll(omaha_version_info):
   )
 
   signed_dll = dll_env.DualSignedBinary(
-      target='%s%s.dll' % (prefix, signed_target_name),
-      source=unsigned_dll,
-  )
+      target=f'{prefix}{signed_target_name}.dll', source=unsigned_dll)
 
   dll_env.Replicate('$STAGING_DIR', signed_dll)
   dll_env.Replicate('$STAGING_DIR',

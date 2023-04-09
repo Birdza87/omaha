@@ -55,14 +55,14 @@ def ConvertToMSIVersionNumberIfNeeded(product_version):
     return product_version
 
   # Check that the input version number is in range.
-  assert patch <= 16383, 'Error, patch number %s out of range.' % patch
-  assert build <= 65535, 'Error, build number %s out of range.' % build
+  assert patch <= 16383, f'Error, patch number {patch} out of range.'
+  assert build <= 65535, f'Error, build number {build} out of range.'
 
   msi_major = (1 << 6) | ((build & 0xffff) >> 10)
   msi_minor = (build >> 2) & 0xff
   msi_build = ((build & 0x3) << 14) | (patch & 0x3FFF)
 
-  return str(msi_major) + '.' + str(msi_minor) + '.' + str(msi_build)
+  return f'{str(msi_major)}.{str(msi_minor)}.{str(msi_build)}'
 
 
 def GetInstallerNamespace():
@@ -108,15 +108,15 @@ def GenerateNameBasedGUID(namespace, name):
   clock_seq_hi_and_reserved = int(md5_hex_digits[8], 16)
   clock_seq_hi_and_reserved = 0x80 | (clock_seq_hi_and_reserved & 0x3f)
 
-  return (
-      '%s-%s-%02X%s-%02X%s-%s' % (
-          ''.join(md5_hex_digits[0:4]),
-          ''.join(md5_hex_digits[4:6]),
-          version,
-          md5_hex_digits[7],
-          clock_seq_hi_and_reserved,
-          md5_hex_digits[9],
-          ''.join(md5_hex_digits[10:])))
+  return '%s-%s-%02X%s-%02X%s-%s' % (
+      ''.join(md5_hex_digits[:4]),
+      ''.join(md5_hex_digits[4:6]),
+      version,
+      md5_hex_digits[7],
+      clock_seq_hi_and_reserved,
+      md5_hex_digits[9],
+      ''.join(md5_hex_digits[10:]),
+  )
 
 
 def GetWixCandleFlags(
@@ -138,39 +138,39 @@ def GetWixCandleFlags(
     architecture=None):
   """Generate the proper set of defines for WiX Candle usage."""
   flags = [
-      '-dProductName=' + product_name,
-      '-dProductNameLegalIdentifier=' + product_name_legal_identifier,
-      '-dProductVersion=' + msi_product_version,
-      '-dProductOriginalVersionString=' + product_version,
-      '-dProductBuildYear=' + str(date.today().year),
-      '-dProductGuid=' + product_guid,
-      ]
+      f'-dProductName={product_name}',
+      f'-dProductNameLegalIdentifier={product_name_legal_identifier}',
+      f'-dProductVersion={msi_product_version}',
+      f'-dProductOriginalVersionString={product_version}',
+      f'-dProductBuildYear={str(date.today().year)}',
+      f'-dProductGuid={product_guid}',
+  ]
 
   if company_name:
-    flags.append('-dCompanyName=' + company_name)
+    flags.append(f'-dCompanyName={company_name}')
 
   if custom_action_dll_path:
-    flags.append('-dMsiInstallerCADll=' + custom_action_dll_path)
+    flags.append(f'-dMsiInstallerCADll={custom_action_dll_path}')
 
   if product_uninstaller_additional_args:
     flags.append('-dProductUninstallerAdditionalArgs=' +
                  product_uninstaller_additional_args)
 
   if msi_product_id:
-    flags.append('-dMsiProductId=' + msi_product_id)
+    flags.append(f'-dMsiProductId={msi_product_id}')
 
   if msi_upgradecode_guid:
-    flags.append('-dMsiUpgradeCode=' + msi_upgradecode_guid)
+    flags.append(f'-dMsiUpgradeCode={msi_upgradecode_guid}')
 
   # This is allowed to be an empty string.
   if product_custom_params is not None:
-    flags.append('-dProductCustomParams="%s"' % product_custom_params)
+    flags.append(f'-dProductCustomParams="{product_custom_params}"')
 
   if standalone_installer_path:
-    flags.append('-dStandaloneInstallerPath=' + standalone_installer_path)
+    flags.append(f'-dStandaloneInstallerPath={standalone_installer_path}')
 
   if metainstaller_path:
-    flags.append('-dGoogleUpdateMetainstallerPath="%s"' % metainstaller_path)
+    flags.append(f'-dGoogleUpdateMetainstallerPath="{metainstaller_path}"')
 
   if product_installer_install_command:
     flags.append('-dProductInstallerInstallCommand=' +
@@ -181,15 +181,15 @@ def GetWixCandleFlags(
                  product_installer_disable_update_registration_arg)
 
   if product_installer_path:
-    flags.append('-dProductInstallerPath=' + product_installer_path)
+    flags.append(f'-dProductInstallerPath={product_installer_path}')
 
   if product_installer_data:
     product_installer_data = product_installer_data.replace(
         '==MSI-PRODUCT-ID==', msi_product_id)
-    flags.append('-dProductInstallerData=' + product_installer_data)
+    flags.append(f'-dProductInstallerData={product_installer_data}')
 
   if product_icon_path:
-    flags.append('-dProductIcon=' + product_icon_path)
+    flags.append(f'-dProductIcon={product_icon_path}')
 
   if architecture:
     # Translate some common strings, like from platform.machine().
